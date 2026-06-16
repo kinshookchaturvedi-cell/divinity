@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divine Canvas - Static Mirror</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #ffffff;
+            --accent-color: #c5a880;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            text-align: center;
+            padding: 60px 20px 20px;
+        }
+        .subtitle {
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        h1 {
+            font-size: 4rem;
+            margin: 0;
+            font-family: Georgia, serif;
+            font-weight: 400;
+            letter-spacing: -1px;
+        }
+        .nav-container {
+            position: sticky;
+            top: 0;
+            background-color: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border-top: 1px solid #1a1a1a;
+            border-bottom: 1px solid #1a1a1a;
+            margin-top: 30px;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #666;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .tab-btn:hover {
+            color: var(--text-color);
+        }
+        .tab-btn.active {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            font-weight: 700;
+            border-radius: 4px;
+        }
+        .gallery-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+        .gallery-item {
+            display: flex;
+            flex-direction: column;
+            background-color: #111;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover {
+            transform: translateY(-4px);
+        }
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 125%;
+            background-color: #151515;
+        }
+        .gallery-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .item-details {
+            padding: 20px;
+            border-top: 1px solid #1a1a1a;
+        }
+        .item-meta {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .item-details h2 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            font-weight: 400;
+            font-family: Georgia, serif;
+        }
+        .item-tag {
+            font-size: 11px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+        footer {
+            text-align: center;
+            padding: 80px 0 40px;
+            color: #333;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-top: 1px solid #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="subtitle">✨ The Premier Collection</div>
+        <h1>Divine Canvas</h1>
+    </header>
+
+    <div class="nav-container">
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="filterGallery('ALL')">All</button>
+            <button class="tab-btn" onclick="filterGallery('KRISHNA')">Krishna</button>
+            <button class="tab-btn" onclick="filterGallery('SHIVA')">Shiva</button>
+            <button class="tab-btn" onclick="filterGallery('SRI GANESHA')">Sri Ganesha</button>
+            <button class="tab-btn" onclick="filterGallery('VISHNU')">Vishnu</button>
+            <button class="tab-btn" onclick="filterGallery('NARSIMHA')">Narsimha</button>
+            <button class="tab-btn" onclick="filterGallery('RAMA')">Rama</button>
+            <button class="tab-btn" onclick="filterGallery('RADHE KRISHNA')">Radhe Krishna</button>
+            <button class="tab-btn" onclick="filterGallery('LAKSHMI')">Lakshmi</button>
+            <button class="tab-btn" onclick="filterGallery('SARASWATI')">Saraswati</button>
+            <button class="tab-btn" onclick="filterGallery('HANUMAN')">Hanuman</button>
+            <button class="tab-btn" onclick="filterGallery('RAM DARBAR')">Ram Darbar</button>
+            <button class="tab-btn" onclick="filterGallery('SAI BABA')">Sai Baba</button>
+        </div>
+    </div>
+
+    <div class="gallery-container">
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <footer>
+        DIVINE CANVAS EXHIBITION &copy; 2026
+    </footer>
+
+    <script>
+        // --- PRECISE IMAGE RANGES ADJUSTMENT SYSTEM ---
+        function getCategoryAndTitle(imgNum) {
+            // SHIVA: Items 1 to 34 are correctly mapped here
+            if (imgNum >= 1 && imgNum <= 34) {
+                return { category: 'SHIVA', title: 'Shiva (Transformation & Peace)' };
+            } 
+            
+            // --- ADJUST THESE CONFIGURATION RANGES BELOW ---
+            // Open your images folder, look at which numbers belong to which category, and update the ranges here:
+            else if (imgNum >= 35 && imgNum <= 55) { 
+                return { category: 'KRISHNA', title: 'Lord Krishna' }; 
+            } 
+            else if (imgNum >= 56 && imgNum <= 75) { 
+                return { category: 'SRI GANESHA', title: 'Sri Ganesha' }; 
+            } 
+            else if (imgNum >= 76 && imgNum <= 95) { 
+                return { category: 'VISHNU', title: 'Lord Vishnu' }; 
+            }
+            else if (imgNum >= 96 && imgNum <= 110) { 
+                return { category: 'NARSIMHA', title: 'Lord Narsimha' }; 
+            }
+            else if (imgNum >= 111 && imgNum <= 125) { 
+                return { category: 'RAMA', title: 'Lord Rama' }; 
+            }
+            else if (imgNum >= 126 && imgNum <= 140) { 
+                return { category: 'RADHE KRISHNA', title: 'Radhe Krishna' }; 
+            }
+            else if (imgNum >= 141 && imgNum <= 155) { 
+                return { category: 'LAKSHMI', title: 'Mata Lakshmi' }; 
+            }
+            else if (imgNum >= 156 && imgNum <= 165) { 
+                return { category: 'SARASWATI', title: 'Mata Saraswati' }; 
+            }
+            else if (imgNum >= 166 && imgNum <= 180) { 
+                return { category: 'HANUMAN', title: 'Hanuman Ji' }; 
+            }
+            else if (imgNum >= 181 && imgNum <= 190) { 
+                return { category: 'RAM DARBAR', title: 'Ram Darbar' }; 
+            }
+            else if (imgNum >= 191 && imgNum <= 193) { 
+                return { category: 'SAI BABA', title: 'Sai Baba' }; 
+            }
+            
+            // Default fallback
+            else {
+                return { category: 'ALL', title: 'Divine Artwork' };
+            }
+        }
+
+        const grid = document.getElementById('galleryGrid');
+        
+        for (let i = 1; i <= 193; i++) {
+            const data = getCategoryAndTitle(i);
+            
+            const itemHTML = `
+                <div class="gallery-item" data-category="${data.category}">
+                    <div class="image-wrapper">
+                        <img src="images/divine_canvas_${i}.jpeg" alt="${data.title}" loading="lazy">
+                    </div>
+                    <div class="item-details">
+                        <div class="item-meta">Item #${i}</div>
+                        <h2>${data.title}</h2>
+                        <div class="item-tag">Vedic Realism</div>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', itemHTML);
+        }
+
+        function filterGallery(category) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.trim().toUpperCase() === category) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach(item => {
+                const itemCat = item.getAttribute('data-category');
+                if (category === 'ALL' || itemCat === category) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
