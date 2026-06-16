@@ -187,52 +187,66 @@
     <script>
         // --- PRECISE IMAGE RANGES ADJUSTMENT SYSTEM ---
         function getCategoryAndTitle(imgNum) {
-            // SHIVA: Items 1 to 34 are correctly mapped here
-            if (imgNum >= 1 && imgNum <= 34) {
-                return { category: 'SHIVA', title: 'Shiva (Transformation & Peace)' };
-            } 
-            
-            // --- ADJUST THESE CONFIGURATION RANGES BELOW ---
-            // Open your images folder, look at which numbers belong to which category, and update the ranges here:
-            else if (imgNum >= 35 && imgNum <= 55) { 
-                return { category: 'KRISHNA', title: 'Lord Krishna' }; 
-            } 
-            else if (imgNum >= 56 && imgNum <= 75) { 
-                return { category: 'SRI GANESHA', title: 'Sri Ganesha' }; 
-            } 
-            else if (imgNum >= 76 && imgNum <= 95) { 
-                return { category: 'VISHNU', title: 'Lord Vishnu' }; 
-            }
-            else if (imgNum >= 96 && imgNum <= 110) { 
-                return { category: 'NARSIMHA', title: 'Lord Narsimha' }; 
-            }
-            else if (imgNum >= 111 && imgNum <= 125) { 
-                return { category: 'RAMA', title: 'Lord Rama' }; 
-            }
-            else if (imgNum >= 126 && imgNum <= 140) { 
-                return { category: 'RADHE KRISHNA', title: 'Radhe Krishna' }; 
-            }
-            else if (imgNum >= 141 && imgNum <= 155) { 
-                return { category: 'LAKSHMI', title: 'Mata Lakshmi' }; 
-            }
-            else if (imgNum >= 156 && imgNum <= 165) { 
-                return { category: 'SARASWATI', title: 'Mata Saraswati' }; 
-            }
-            else if (imgNum >= 166 && imgNum <= 180) { 
-                return { category: 'HANUMAN', title: 'Hanuman Ji' }; 
-            }
-            else if (imgNum >= 181 && imgNum <= 190) { 
-                return { category: 'RAM DARBAR', title: 'Ram Darbar' }; 
-            }
-            else if (imgNum >= 191 && imgNum <= 193) { 
-                return { category: 'SAI BABA', title: 'Sai Baba' }; 
-            }
-            
-            // Default fallback
-            else {
-                return { category: 'ALL', title: 'Divine Artwork' };
-            }
-        }
+    // RAM DARBAR
+    if (imgNum === 1 || (imgNum >= 143 && imgNum <= 147) || imgNum === 175) {
+        return { category: 'RAM DARBAR', title: 'Ram Darbar' };
+    }
+    // KRISHNA
+    else if (imgNum === 5 || imgNum === 7 || imgNum === 8 || imgNum === 10 || 
+            (imgNum >= 12 && imgNum <= 35) || (imgNum >= 51 && imgNum <= 64) || 
+            (imgNum >= 149 && imgNum <= 155) || (imgNum >= 177 && imgNum <= 180)) {
+        return { category: 'KRISHNA', title: 'Lord Krishna' };
+    }
+    // SHIVA
+    else if (imgNum === 2 || (imgNum >= 36 && imgNum <= 47) || (imgNum >= 73 && imgNum <= 88) || 
+             imgNum === 148 || imgNum === 188) {
+        return { category: 'SHIVA', title: 'Shiva (Transformation & Peace)' };
+    }
+    // GANESHA
+    else if ((imgNum >= 68 && imgNum <= 69) || (imgNum >= 89 && imgNum <= 93) || 
+             imgNum === 172 || (imgNum >= 181 && imgNum <= 182) || imgNum === 189) {
+        return { category: 'SRI GANESHA', title: 'Sri Ganesha' };
+    }
+    // VISHNU
+    else if (imgNum === 66 || imgNum === 67 || (imgNum >= 94 && imgNum <= 95) || 
+            (imgNum >= 156 && imgNum <= 162)) {
+        return { category: 'VISHNU', title: 'Lord Vishnu' };
+    }
+    // NARSIMHA
+    else if ((imgNum >= 96 && imgNum <= 103) || (imgNum >= 166 && imgNum <= 169) || imgNum === 171) {
+        return { category: 'NARSIMHA', title: 'Lord Narsimha' };
+    }
+    // RAMA
+    else if ((imgNum >= 104 && imgNum <= 113) || (imgNum >= 186 && imgNum <= 187)) {
+        return { category: 'RAMA', title: 'Lord Rama' };
+    }
+    // RADHE KRISHNA
+    else if (imgNum === 3 || imgNum === 4 || imgNum === 6 || imgNum === 9 || imgNum === 11 || 
+            (imgNum >= 114 && imgNum <= 119) || imgNum === 173 || imgNum === 174 || 
+             imgNum === 176 || imgNum === 185) {
+        return { category: 'RADHE KRISHNA', title: 'Radhe Krishna' };
+    }
+    // LAKSHMI
+    else if ((imgNum >= 120 && imgNum <= 129) || imgNum === 134 || imgNum === 135 || imgNum === 183) {
+        return { category: 'LAKSHMI', title: 'Mata Lakshmi' };
+    }
+    // SARASWATI
+    else if ((imgNum >= 130 && imgNum <= 133) || imgNum === 136 || imgNum === 190) {
+        return { category: 'SARASWATI', title: 'Mata Saraswati' };
+    }
+    // HANUMAN
+    else if (imgNum === 50 || imgNum === 70 || (imgNum >= 137 && imgNum <= 142) || imgNum === 184) {
+        return { category: 'HANUMAN', title: 'Hanuman Ji' };
+    }
+    // SAI BABA
+    else if ((imgNum >= 163 && imgNum <= 165) || imgNum === 170) {
+        return { category: 'SAI BABA', title: 'Sai Baba' };
+    }
+    // Default fallback
+    else {
+        return { category: 'ALL', title: 'Divine Artwork' };
+    }
+}
 
         const grid = document.getElementById('galleryGrid');
         
