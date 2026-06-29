@@ -22,10 +22,13 @@ DEITY_QUERIES = {
 }
 
 IMAGES_PER_DEITY = 100
+
+# Comprehensive headers to thoroughly mimic a standard web browser connection
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9"
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive"
 }
 
 def get_wikimedia_images(query, limit):
@@ -44,7 +47,15 @@ def get_wikimedia_images(query, limit):
     
     try:
         response = requests.get(url, params=params, headers=HEADERS, timeout=15)
+        
+        # If the search endpoint itself throttles us, pause gracefully
+        if response.status_code == 429:
+            print("   ⚠️ Search API throttled (429). Waiting 10 seconds to cool down...")
+            time.sleep(10)
+            response = requests.get(url, params=params, headers=HEADERS, timeout=15)
+
         if response.status_code != 200:
+            print(f"   ❌ Search failure status code: {response.status_code}")
             return []
         
         data = response.json()
@@ -75,6 +86,7 @@ def populate_relevant_assets():
         
         if not img_urls:
             print(f"   ⚠️ Could not find specific media pool for {deity}. Skipping.")
+            time.sleep(2)  # Cooldown before hitting next category search
             continue
 
         for i, img_url in enumerate(img_urls, start=1):
@@ -84,21 +96,41 @@ def populate_relevant_assets():
             if os.path.exists(target_file_path):
                 continue
 
-            try:
-                img_response = requests.get(img_url, headers=HEADERS, timeout=15)
-                if img_response.status_code == 200:
-                    with open(target_file_path, 'wb') as f:
-                        f.write(img_response.content)
-                    print(f"   ↳ [Success] Saved {i}/{len(img_urls)} -> {file_name}")
-                else:
-                    print(f"   ❌ Failed to download asset index {i} (Status: {img_response.status_code})")
-                
-                # Keep the rate-limiting sleep active for all outcomes in the try block
-                time.sleep(0.2)  
-                
-            except Exception as e:
-                print(f"   ❌ Error saving file {i}: {e}")
-                time.sleep(1) # Give the network a 1-second breather if it crashes
+            # Adaptive download mechanism with retry system for individual image CDNs
+            retries = 3
+            backoff = 5
+            
+            while retries > 0:
+                try:
+                    img_response = requests.get(img_url, headers=HEADERS, timeout=15)
+                    
+                    if img_response.status_code == 200:
+                        with open(target_file_path, 'wb') as f:
+                            f.write(img_response.content)
+                        print(f"   ↳ [Success] Saved {i}/{len(img_urls)} -> {file_name}")
+                        break
+                    elif img_response.status_code == 429:
+                        print(f"   ⚠️ Download Throttled (429). Retrying in {backoff}s...")
+                        time.sleep(backoff)
+                        backoff *= 2
+                        retries -= 1
+                    else:
+                        print(f"   ❌ Failed asset index {i} (Status: {img_response.status_code})")
+                        break
+                except KeyboardInterrupt:
+                    print("\n🛑 Execution paused by user. Stopping safely...")
+                    return
+                except Exception as e:
+                    print(f"   ❌ Error saving file {i}: {e}")
+                    time.sleep(1)
+                    break
+            
+            # Gentle pacing interval between downloads
+            time.sleep(0.5)
+            
+        # Clear breather delay after finishing a complete deity sequence
+        print(f"✅ Finished {deity}. Resting engine...")
+        time.sleep(3)
 
 if __name__ == "__main__":
     populate_relevant_assets()
