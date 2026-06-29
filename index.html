@@ -185,109 +185,66 @@
     </footer>
 
     <script>
-        // --- PRECISE IMAGE RANGES ADJUSTMENT SYSTEM ---
-        function getCategoryAndTitle(imgNum) {
-    // RAM DARBAR
-    if (imgNum === 1 || (imgNum >= 143 && imgNum <= 147) || imgNum === 175) {
-        return { category: 'RAM DARBAR', title: 'Ram Darbar' };
-    }
-    // KRISHNA
-    else if (imgNum === 5 || imgNum === 7 || imgNum === 8 || imgNum === 10 || 
-            (imgNum >= 12 && imgNum <= 35) || (imgNum >= 51 && imgNum <= 64) || 
-            (imgNum >= 149 && imgNum <= 155) || (imgNum >= 177 && imgNum <= 180)) {
-        return { category: 'KRISHNA', title: 'Lord Krishna' };
-    }
-    // SHIVA
-    else if (imgNum === 2 || (imgNum >= 36 && imgNum <= 47) || (imgNum >= 73 && imgNum <= 88) || 
-             imgNum === 148 || imgNum === 188) {
-        return { category: 'SHIVA', title: 'Shiva (Transformation & Peace)' };
-    }
-    // GANESHA
-    else if ((imgNum >= 68 && imgNum <= 69) || (imgNum >= 89 && imgNum <= 93) || 
-             imgNum === 172 || (imgNum >= 181 && imgNum <= 182) || imgNum === 189) {
-        return { category: 'SRI GANESHA', title: 'Sri Ganesha' };
-    }
-    // VISHNU
-    else if (imgNum === 66 || imgNum === 67 || (imgNum >= 94 && imgNum <= 95) || 
-            (imgNum >= 156 && imgNum <= 162)) {
-        return { category: 'VISHNU', title: 'Lord Vishnu' };
-    }
-    // NARSIMHA
-    else if ((imgNum >= 96 && imgNum <= 103) || (imgNum >= 166 && imgNum <= 169) || imgNum === 171) {
-        return { category: 'NARSIMHA', title: 'Lord Narsimha' };
-    }
-    // RAMA
-    else if ((imgNum >= 104 && imgNum <= 113) || (imgNum >= 186 && imgNum <= 187)) {
-        return { category: 'RAMA', title: 'Lord Rama' };
-    }
-    // RADHE KRISHNA
-    else if (imgNum === 3 || imgNum === 4 || imgNum === 6 || imgNum === 9 || imgNum === 11 || 
-            (imgNum >= 114 && imgNum <= 119) || imgNum === 173 || imgNum === 174 || 
-             imgNum === 176 || imgNum === 185) {
-        return { category: 'RADHE KRISHNA', title: 'Radhe Krishna' };
-    }
-    // LAKSHMI
-    else if ((imgNum >= 120 && imgNum <= 129) || imgNum === 134 || imgNum === 135 || imgNum === 183) {
-        return { category: 'LAKSHMI', title: 'Mata Lakshmi' };
-    }
-    // SARASWATI
-    else if ((imgNum >= 130 && imgNum <= 133) || imgNum === 136 || imgNum === 190) {
-        return { category: 'SARASWATI', title: 'Mata Saraswati' };
-    }
-    // HANUMAN
-    else if (imgNum === 50 || imgNum === 70 || (imgNum >= 137 && imgNum <= 142) || imgNum === 184) {
-        return { category: 'HANUMAN', title: 'Hanuman Ji' };
-    }
-    // SAI BABA
-    else if ((imgNum >= 163 && imgNum <= 165) || imgNum === 170) {
-        return { category: 'SAI BABA', title: 'Sai Baba' };
-    }
-    // Default fallback
-    else {
-        return { category: 'ALL', title: 'Divine Artwork' };
-    }
-}
+// Centralized Registry Mapping Deities directly to their custom subfolders
+const galleryRegistry = {
+    "KRISHNA": { title: "Lord Krishna", folder: "krishna", items: [5, 7, 8, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 149, 150, 151, 152, 153, 154, 155, 177, 178, 179, 180] },
+    "SHIVA": { title: "Shiva (Transformation & Peace)", folder: "shiva", items: [2, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 148, 188] },
+    "SRI GANESHA": { title: "Sri Ganesha", folder: "sri_ganesha", items: [68, 69, 89, 90, 91, 92, 93, 172, 181, 182, 189] },
+    "VISHNU": { title: "Lord Vishnu", folder: "vishnu", items: [66, 67, 94, 95, 156, 157, 158, 159, 160, 161, 162] },
+    "NARSIMHA": { title: "Lord Narsimha", folder: "narsimha", items: [96, 97, 98, 99, 100, 101, 102, 103, 166, 167, 168, 169, 171] },
+    "RAMA": { title: "Lord Rama", folder: "rama", items: [104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 186, 187] },
+    "RADHE KRISHNA": { title: "Radhe Krishna", folder: "radhe_krishna", items: [3, 4, 6, 9, 11, 114, 115, 116, 117, 118, 119, 173, 174, 176, 185] },
+    "LAKSHMI": { title: "Mata Lakshmi", folder: "lakshmi", items: [120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 134, 135, 183] },
+    "SARASWATI": { title: "Mata Saraswati", folder: "saraswati", items: [130, 131, 132, 133, 136, 190] },
+    "HANUMAN": { title: "Hanuman Ji", folder: "hanuman", items: [50, 70, 137, 138, 139, 140, 141, 142, 184] },
+    "RAM DARBAR": { title: "Ram Darbar", folder: "ram_darbar", items: [1, 143, 144, 145, 146, 147, 175] },
+    "SAI BABA": { title: "Sai Baba", folder: "sai_baba", items: [163, 164, 165, 170] }
+};
 
-        const grid = document.getElementById('galleryGrid');
-        
-        for (let i = 1; i <= 193; i++) {
-            const data = getCategoryAndTitle(i);
-            
-            const itemHTML = `
-                <div class="gallery-item" data-category="${data.category}">
-                    <div class="image-wrapper">
-                        <img src="images/divine_canvas_${i}.jpeg" alt="${data.title}" loading="lazy">
-                    </div>
-                    <div class="item-details">
-                        <div class="item-meta">Item #${i}</div>
-                        <h2>${data.title}</h2>
-                        <div class="item-tag">Vedic Realism</div>
-                    </div>
+const grid = document.getElementById('galleryGrid');
+
+// Render everything dynamically based on the updated structural directory layout
+Object.keys(galleryRegistry).forEach(categoryKey => {
+    const deity = galleryRegistry[categoryKey];
+    
+    deity.items.forEach(id => {
+        const itemHTML = `
+            <div class="gallery-item" data-category="${categoryKey}">
+                <div class="image-wrapper">
+                    <img src="images/${deity.folder}/divine_canvas_${id}.jpeg" alt="${deity.title}" loading="lazy">
                 </div>
-            `;
-            grid.insertAdjacentHTML('beforeend', itemHTML);
-        }
+                <div class="item-details">
+                    <div class="item-meta">Item #${id}</div>
+                    <h2>${deity.title}</h2>
+                    <div class="item-tag">Vedic Realism</div>
+                </div>
+            </div>
+        `;
+        grid.insertAdjacentHTML('beforeend', itemHTML);
+    });
+});
 
-        function filterGallery(category) {
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
-                if (btn.textContent.trim().toUpperCase() === category) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            const items = document.querySelectorAll('.gallery-item');
-            items.forEach(item => {
-                const itemCat = item.getAttribute('data-category');
-                if (category === 'ALL' || itemCat === category) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+// Layout interactive navigation filters
+function filterGallery(category) {
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        if (btn.textContent.trim().toUpperCase() === category) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
         }
-    </script>
+    });
+
+    const items = document.querySelectorAll('.gallery-item');
+    items.forEach(item => {
+        const itemCat = item.getAttribute('data-category');
+        if (category === 'ALL' || itemCat === category) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>
 </body>
 </html>
