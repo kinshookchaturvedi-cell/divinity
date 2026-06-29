@@ -4,7 +4,7 @@ import requests
 
 IMAGE_DIR = "./mock_images"
 
-# 1. Broad deity queries optimized for Wikipedia's media engine
+# Broad deity queries optimized for Wikimedia's media engine
 DEITY_QUERIES = {
     "ram_darbar": "Rama_darbar",
     "krishna": "Krishna",
@@ -22,6 +22,7 @@ DEITY_QUERIES = {
 }
 
 IMAGES_PER_DEITY = 100
+HEADERS = {"User-Agent": "DivinityGalleryBot/1.0 (contact: admin@example.com)"}
 
 def get_wikimedia_images(query, limit):
     """Fetches real image URLs directly from Wikimedia Commons matching the deity."""
@@ -37,10 +38,8 @@ def get_wikimedia_images(query, limit):
         "iiprop": "url"
     }
     
-    headers = {"User-Agent": "DivinityGalleryBot/1.0 (contact: admin@example.com)"}
-    
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response = requests.get(url, params=params, headers=HEADERS, timeout=15)
         if response.status_code != 200:
             return []
         
@@ -82,14 +81,14 @@ def populate_relevant_assets():
                 continue
 
             try:
-                # Download the actual historical/spiritual image
-                img_response = requests.get(img_url, timeout=15)
+                # FIX: Added headers to the image asset download request to prevent 403 blocks
+                img_response = requests.get(img_url, headers=HEADERS, timeout=15)
                 if img_response.status_code == 200:
                     with open(target_file_path, 'wb') as f:
                         f.write(img_response.content)
                     print(f"   ↳ [Success] Saved {i}/{len(img_urls)} -> {file_name}")
                 else:
-                    print(f"   ❌ Failed to download asset index {i}")
+                    print(f"   ❌ Failed to download asset index {i} (Status: {img_response.status_code})")
                 
                 time.sleep(0.2)  # Polite crawling buffer
             except Exception as e:
