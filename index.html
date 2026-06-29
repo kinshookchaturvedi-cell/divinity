@@ -209,16 +209,13 @@ function renderGallery(galleryRegistry) {
         const deity = galleryRegistry[categoryKey];
         
         deity.images.forEach(fileName => {
-            // Drop extensions from visible meta tags
-            const itemLabel = fileName.split('.')[0].replace(/[-_]/g, ' ');
-
+            // Simply remove the itemLabel variable and its HTML tag
             const itemHTML = `
                 <div class="gallery-item" data-category="${categoryKey}">
                     <div class="image-wrapper">
                         <img src="images/${deity.folder}/${fileName}" alt="${deity.title}" loading="lazy">
                     </div>
                     <div class="item-details">
-                        <div class="item-meta">${itemLabel}</div>
                         <h2>${deity.title}</h2>
                         <div class="item-tag">Vedic Realism</div>
                     </div>
