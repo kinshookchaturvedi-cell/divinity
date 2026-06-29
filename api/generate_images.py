@@ -81,7 +81,6 @@ def populate_relevant_assets():
                 continue
 
             try:
-                # FIX: Added headers to the image asset download request to prevent 403 blocks
                 img_response = requests.get(img_url, headers=HEADERS, timeout=15)
                 if img_response.status_code == 200:
                     with open(target_file_path, 'wb') as f:
@@ -90,9 +89,12 @@ def populate_relevant_assets():
                 else:
                     print(f"   ❌ Failed to download asset index {i} (Status: {img_response.status_code})")
                 
-                time.sleep(0.2)  # Polite crawling buffer
+                # Keep the rate-limiting sleep active for all outcomes in the try block
+                time.sleep(0.2)  
+                
             except Exception as e:
                 print(f"   ❌ Error saving file {i}: {e}")
+                time.sleep(1) # Give the network a 1-second breather if it crashes
 
 if __name__ == "__main__":
     populate_relevant_assets()
