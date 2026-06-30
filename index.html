@@ -126,13 +126,6 @@
             font-weight: 400;
             font-family: Georgia, serif;
         }
-        .item-tag {
-            font-size: 11px;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 600;
-        }
         footer {
             text-align: center;
             padding: 80px 0 40px;
@@ -152,7 +145,6 @@
     </header>
 
     <div class="nav-container">
-        <!-- The layout buttons are now managed entirely by JavaScript -->
         <div class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="filterGallery('ALL')">All</button>
         </div>
@@ -187,11 +179,10 @@
 
         // 2. Dynamically build category tabs from API data keys
         function renderNavigation(galleryRegistry) {
-            // Re-initialize with the default master "All" tab
             navTabs.innerHTML = '<button class="tab-btn active" onclick="filterGallery(\'ALL\')">All</button>';
             
             Object.keys(galleryRegistry).forEach(categoryKey => {
-                if (categoryKey === 'ALL') return; // Prevent duplicating if your API serves an 'ALL' key
+                if (categoryKey === 'ALL') return; 
                 
                 const deity = galleryRegistry[categoryKey];
                 const buttonHTML = `<button class="tab-btn" onclick="filterGallery('${categoryKey}')">${deity.title}</button>`;
@@ -199,7 +190,7 @@
             });
         }
 
-        // 3. Render out asset nodes dynamically mapped by folder structures
+        // 3. Render out asset nodes dynamically mapped by object structures
         function renderGallery(galleryRegistry) {
             grid.innerHTML = ""; // Flush loaders
             
@@ -207,14 +198,17 @@
                 if (categoryKey === 'ALL') return; 
                 
                 const deity = galleryRegistry[categoryKey];
-                deity.images.forEach(fileName => {
+                deity.images.forEach(imgObj => {
                     const itemHTML = `
                         <div class="gallery-item" data-category="${categoryKey}">
                             <div class="image-wrapper">
-                                <img src="images/${deity.folder}/${fileName}" alt="${deity.title}" loading="lazy">
+                                <img src="images/${deity.folder}/${imgObj.filename}" alt="${deity.title}" loading="lazy">
                             </div>
                             <div class="item-details">
                                 <h2>${deity.title}</h2>
+                                <p style="color: #888; font-size: 13px; margin: 5px 0 0 0; line-height: 1.4;">
+                                    ${imgObj.description}
+                                </p>
                             </div>
                         </div>
                     `;
@@ -227,7 +221,6 @@
         function filterGallery(category) {
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(btn => {
-                // Check against button text or explicitly passed event targets
                 if (btn.getAttribute('onclick').includes(`'${category}'`)) {
                     btn.classList.add('active');
                 } else {

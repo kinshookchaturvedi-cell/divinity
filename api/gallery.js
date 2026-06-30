@@ -18,16 +18,36 @@ export default function handler(req, res) {
         /\.(jpg|jpeg|png|gif|webp)$/i.test(file)
       );
 
-      // Generate a clean title (e.g., "sri_ganesha" -> "Sri Ganesha")
       let displayTitle = folder.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       
-      // Create a consistent uppercase category key for filtering (e.g., "GANESHA")
+      if (displayTitle === "Sri Ganesha") displayTitle = "Ganesha";
+      if (displayTitle === "Radhe Krishna") displayTitle = "Radhe";
+
       const categoryKey = displayTitle.toUpperCase();
+
+      // Map each file into an object containing both the filename AND a unique description
+      const imagesWithDescriptions = files.map(file => {
+        let imageDesc = `A beautiful depiction of ${displayTitle}.`;
+
+        // EXAMPLE: Customizing by specific file names
+        if (file === 'radhe_flute.jpg') {
+          imageDesc = "Radhe listening intently to the divine melody of the flute.";
+        } else if (file === 'ganesha_sitting.png') {
+          imageDesc = "Lord Ganesha seated majestically on his golden throne.";
+        } else if (categoryKey === "RADHE") {
+          imageDesc = "Epitome of eternal love and divine grace.";
+        }
+
+        return {
+          filename: file,
+          description: imageDesc
+        };
+      });
 
       galleryData[categoryKey] = {
         title: displayTitle,
         folder: folder,
-        images: files
+        images: imagesWithDescriptions // Now an array of objects
       };
     }
   });
