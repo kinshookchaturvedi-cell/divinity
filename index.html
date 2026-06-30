@@ -120,13 +120,6 @@
             padding: 20px;
             border-top: 1px solid #1a1a1a;
         }
-        .item-meta {
-            font-size: 11px;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
         .item-details h2 {
             margin: 0 0 10px 0;
             font-size: 20px;
@@ -159,21 +152,9 @@
     </header>
 
     <div class="nav-container">
-        <div class="nav-tabs">
+        <!-- The layout buttons are now managed entirely by JavaScript -->
+        <div class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="filterGallery('ALL')">All</button>
-            <button class="tab-btn" onclick="filterGallery('KRISHNA')">Krishna</button>
-            <button class="tab-btn" onclick="filterGallery('SHIVA')">Shiva</button>
-            <button class="tab-btn" onclick="filterGallery('GANESHA')">Ganesha</button>
-            <button class="tab-btn" onclick="filterGallery('VISHNU')">Vishnu</button>
-            <button class="tab-btn" onclick="filterGallery('NARSIMHA')">Narsimha</button>
-            <button class="tab-btn" onclick="filterGallery('RAMA')">Rama</button>
-            <button class="tab-btn" onclick="filterGallery('RADHA')">Radha</button>
-            <button class="tab-btn" onclick="filterGallery('DURGA')">Durga</button>
-            <button class="tab-btn" onclick="filterGallery('LAKSHMI')">Lakshmi</button>
-            <button class="tab-btn" onclick="filterGallery('SARASWATI')">Saraswati</button>
-            <button class="tab-btn" onclick="filterGallery('HANUMAN')">Hanuman</button>
-            <button class="tab-btn" onclick="filterGallery('RAM DARBAR')">Ram Darbar</button>
-            <button class="tab-btn" onclick="filterGallery('SAI BABA')">Sai Baba</button>
         </div>
     </div>
 
@@ -182,72 +163,89 @@
     </div>
 
     <footer>
-        DIVINE CANVAS EXHIBITION &copy; 2026
+        DIVINE CANVAS EXHIBITION &copy; KINSHOOK CHATURVEDI 2026
     </footer>
 
     <script>
-const grid = document.getElementById('galleryGrid');
+        const grid = document.getElementById('galleryGrid');
+        const navTabs = document.getElementById('navTabs');
 
-// 1. Fetch real-time filesystem structures from your serverless API route
-fetch('/api/gallery')
-    .then(response => {
-        if (!response.ok) throw new Error("API Route failure status");
-        return response.json();
-    })
-    .then(galleryRegistry => {
-        renderGallery(galleryRegistry);
-    })
-    .catch(err => {
-        console.error("Error loading gallery structure live:", err);
-        grid.innerHTML = `<p style="color: white; text-align: center; width: 100%;">Failed to load live gallery assets. Ensure your api/gallery.js environment is configured.</p>`;
-    });
+        // 1. Fetch real-time filesystem structures from your serverless API route
+        fetch('/api/gallery')
+            .then(response => {
+                if (!response.ok) throw new Error("API Route failure status");
+                return response.json();
+            })
+            .then(galleryRegistry => {
+                renderNavigation(galleryRegistry);
+                renderGallery(galleryRegistry);
+            })
+            .catch(err => {
+                console.error("Error loading gallery structure live:", err);
+                grid.innerHTML = `<p style="color: white; text-align: center; width: 100%;">Failed to load live gallery assets. Ensure your api/gallery.js environment is configured.</p>`;
+            });
 
-// 2. Render out asset nodes dynamically mapped by folder structures
-function renderGallery(galleryRegistry) {
-    grid.innerHTML = ""; // Flush loaders
-    
-    Object.keys(galleryRegistry).forEach(categoryKey => {
-        const deity = galleryRegistry[categoryKey];
-        
-        deity.images.forEach(fileName => {
-            // Simply remove the itemLabel variable and its HTML tag
-            const itemHTML = `
-                <div class="gallery-item" data-category="${categoryKey}">
-                    <div class="image-wrapper">
-                        <img src="images/${deity.folder}/${fileName}" alt="${deity.title}" loading="lazy">
-                    </div>
-                    <div class="item-details">
-                        <h2>${deity.title}</h2>
-                        <div class="item-tag">Vedic Realism</div>
-                    </div>
-                </div>
-            `;
-            grid.insertAdjacentHTML('beforeend', itemHTML);
-        });
-    });
-}
-
-// 3. Keep your interactive navigation filter functionality
-function filterGallery(category) {
-    const buttons = document.querySelectorAll('.tab-btn');
-    buttons.forEach(btn => {
-        if (btn.textContent.trim().toUpperCase() === category) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
+        // 2. Dynamically build category tabs from API data keys
+        function renderNavigation(galleryRegistry) {
+            // Re-initialize with the default master "All" tab
+            navTabs.innerHTML = '<button class="tab-btn active" onclick="filterGallery(\'ALL\')">All</button>';
+            
+            Object.keys(galleryRegistry).forEach(categoryKey => {
+                if (categoryKey === 'ALL') return; // Prevent duplicating if your API serves an 'ALL' key
+                
+                const deity = galleryRegistry[categoryKey];
+                const buttonHTML = `<button class="tab-btn" onclick="filterGallery('${categoryKey}')">${deity.title}</button>`;
+                navTabs.insertAdjacentHTML('beforeend', buttonHTML);
+            });
         }
-    });
 
-    const items = document.querySelectorAll('.gallery-item');
-    items.forEach(item => {
-        const itemCat = item.getAttribute('data-category');
-        if (category === 'ALL' || itemCat === category) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = 'none';
+        // 3. Render out asset nodes dynamically mapped by folder structures
+        function renderGallery(galleryRegistry) {
+            grid.innerHTML = ""; // Flush loaders
+            
+            Object.keys(galleryRegistry).forEach(categoryKey => {
+                if (categoryKey === 'ALL') return; 
+                
+                const deity = galleryRegistry[categoryKey];
+                deity.images.forEach(fileName => {
+                    const itemHTML = `
+                        <div class="gallery-item" data-category="${categoryKey}">
+                            <div class="image-wrapper">
+                                <img src="images/${deity.folder}/${fileName}" alt="${deity.title}" loading="lazy">
+                            </div>
+                            <div class="item-details">
+                                <h2>${deity.title}</h2>
+                                <div class="item-tag">Vedic Realism</div>
+                            </div>
+                        </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', itemHTML);
+                });
+            });
         }
-    });
-}
-</script>
+
+        // 4. Interactive navigation filter functionality
+        function filterGallery(category) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                // Check against button text or explicitly passed event targets
+                if (btn.getAttribute('onclick').includes(`'${category}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach(item => {
+                const itemCat = item.getAttribute('data-category');
+                if (category === 'ALL' || itemCat === category) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
