@@ -1,17 +1,31 @@
 import os
 import json
+import re
 from google import genai
 from google.genai import types
 
 # 1. Initialize the official Google GenAI Client
-# Make sure you run 'export GEMINI_API_KEY="your-key-here"' in your terminal first
 client = genai.Client()
 
-# 2. Path to your gallery registry JSON (adjust if it's directly inside api/gallery.js)
-DATA_FILE_PATH = 'api/gallery_data.json' 
+# Path to your actual serverless API route file
+JS_FILE_PATH = 'api/gallery.js' 
 
-with open(DATA_FILE_PATH, 'r') as f:
-    gallery_data = json.load(f)
+if not os.path.exists(JS_FILE_PATH):
+    print(f"❌ Error: Could not find {JS_FILE_PATH}. Make sure you are in the root directory of your project.")
+    exit(1)
+
+# Read the existing JavaScript file content
+with open(JS_FILE_PATH, 'r', encoding='utf-8') as f:
+    js_content = f.read()
+
+# 2. Use Regex to extract the raw JSON object from the 'const galleryData = { ... };' block
+json_match = re.search(r'const\s+galleryData\s*=\s*(\{.*?\});', js_content, re.DOTALL)
+if not json_match:
+    print("❌ Error: Could not find the 'galleryData' object variable inside api/gallery.js")
+    exit(1)
+
+gallery_data_str = json_match.group(1)
+gallery_data = json.loads(gallery_data_str)
 
 print("✨ Initiating computer vision analysis for Divine Canvas assets...")
 
@@ -34,7 +48,6 @@ for category_key, category_data in gallery_data.items():
         print(f"📸 Analyzing {filename} under {title}...")
         
         try:
-            # Load the binary image data
             with open(image_path, 'rb') as img_file:
                 image_bytes = img_file.read()
                 
@@ -44,21 +57,28 @@ for category_key, category_data in gallery_data.items():
                 contents=[
                     types.Part.from_bytes(
                         data=image_bytes,
-                        mime_type='image/jpeg' # Adjust to image/png if you use PNGs
+                        mime_type='image/jpeg'
                     ),
                     f"Provide a short, elegant, one-sentence spiritual and poetic description for this artwork of {title}. Do not include quotes or filler text."
                 ]
             )
             
-            # OVERWRITE step: Apply the newly generated vision description
             img_obj['description'] = response.text.strip()
             print(f"✅ Success: \"{img_obj['description']}\"")
             
         except Exception as e:
             print(f"❌ Failed to analyze {filename}: {str(e)}")
 
-# 4. Save the updated configuration map back to your registry file
-with open(DATA_FILE_PATH, 'w') as f:
-    json.dump(gallery_data, f, indent=4)
+# 4. Convert the updated data back into formatted JSON and replace it inside api/gallery.js
+updated_json_str = json.dumps(gallery_data, indent=4)
+updated_js_content = re.sub(
+    r'const\s+galleryData\s*=\s*\{.*?\};', 
+    f'const galleryData = {updated_json_str};', 
+    js_content, 
+    flags=re.DOTALL
+)
 
-print("\n🎉 All descriptions have been overwritten successfully by Computer Vision!")
+with open(JS_FILE_PATH, 'w', encoding='utf-8') as f:
+    f.write(updated_js_content)
+
+print("\n🎉 api/gallery.js has been beautifully updated with computer vision one-liners!")
