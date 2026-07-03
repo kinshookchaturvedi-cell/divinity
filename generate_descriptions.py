@@ -1,84 +1,77 @@
 import os
 import json
-import re
 from google import genai
 from google.genai import types
 
 # 1. Initialize the official Google GenAI Client
 client = genai.Client()
 
-# Path to your actual serverless API route file
-JS_FILE_PATH = 'api/gallery.js' 
+IMAGES_DIR = 'images'
+OUTPUT_JSON = os.path.join('api', 'descriptions.json')
 
-if not os.path.exists(JS_FILE_PATH):
-    print(f"❌ Error: Could not find {JS_FILE_PATH}. Make sure you are in the root directory of your project.")
+if not os.path.exists(IMAGES_DIR):
+    print(f"❌ Error: Could not find '{IMAGES_DIR}' directory. Ensure you run this from the project root.")
     exit(1)
 
-# Read the existing JavaScript file content
-with open(JS_FILE_PATH, 'r', encoding='utf-8') as f:
-    js_content = f.read()
+os.makedirs('api', exist_ok=True)
 
-# 2. Use Regex to extract the raw JSON object from the 'const galleryData = { ... };' block
-json_match = re.search(r'const\s+galleryData\s*=\s*(\{.*?\});', js_content, re.DOTALL)
-if not json_match:
-    print("❌ Error: Could not find the 'galleryData' object variable inside api/gallery.js")
-    exit(1)
+# Load existing descriptions if file exists, to avoid re-running things we already paid API credits for
+descriptions_registry = {}
+if os.path.exists(OUTPUT_JSON):
+    with open(OUTPUT_JSON, 'r', encoding='utf-8') as f:
+        try:
+            descriptions_registry = json.load(f)
+        except json.JSONDecodeError:
+            pass
 
-gallery_data_str = json_match.group(1)
-gallery_data = json.loads(gallery_data_str)
+print("✨ Running Computer Vision Analysis on local image folders...")
 
-print("✨ Initiating computer vision analysis for Divine Canvas assets...")
-
-# 3. Walk through each category and image asset
-for category_key, category_data in gallery_data.items():
-    if category_key == "ALL": 
+# 2. Iterate through folders and files locally
+for folder in os.listdir(IMAGES_DIR):
+    folder_path = os.path.join(IMAGES_DIR, folder)
+    if not os.path.isdir(folder_path):
         continue
         
-    folder_name = category_data.get('folder')
-    title = category_data.get('title')
+    # Format a display title similar to how your JS file does it
+    display_title = folder.replace('_', ' ').title()
+    if "Sri Ganesha" in display_title: display_title = "Ganesha"
+    if "Radhe Krishna" in display_title: display_title = "Radhe"
     
-    for img_obj in category_data.get('images', []):
-        filename = img_obj.get('filename')
-        image_path = os.path.join('images', folder_name, filename)
-        
-        if not os.path.exists(image_path):
-            print(f"⚠️ Skipping missing file: {image_path}")
+    for filename in os.listdir(folder_path):
+        if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
             continue
             
-        print(f"📸 Analyzing {filename} under {title}...")
+        # Create a unique key using the folder and file combination
+        registry_key = f"{folder}/{filename}"
+        
+        # Skip if we already have it generated
+        if registry_key in descriptions_registry and descriptions_registry[registry_key]:
+            print(f"⏭️ Skipping (already indexed): {registry_key}")
+            continue
+            
+        image_path = os.path.join(folder_path, filename)
+        print(f"📸 Analyzing image contents via Gemini Vision: {registry_key}...")
         
         try:
             with open(image_path, 'rb') as img_file:
                 image_bytes = img_file.read()
                 
-            # Call the vision model to overwrite the description
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=[
-                    types.Part.from_bytes(
-                        data=image_bytes,
-                        mime_type='image/jpeg'
-                    ),
-                    f"Provide a short, elegant, one-sentence spiritual and poetic description for this artwork of {title}. Do not include quotes or filler text."
+                    types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg'),
+                    f"Provide a short, elegant, one-sentence spiritual and poetic description for this artwork of {display_title}. Do not use quotes or introductory filler text."
                 ]
             )
             
-            img_obj['description'] = response.text.strip()
-            print(f"✅ Success: \"{img_obj['description']}\"")
+            descriptions_registry[registry_key] = response.text.strip()
+            print(f"✅ Success: \"{descriptions_registry[registry_key]}\"")
             
+            # Save incrementally after each successful run
+            with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
+                json.dump(descriptions_registry, f, indent=4, ensure_with_ascii=False)
+                
         except Exception as e:
             print(f"❌ Failed to analyze {filename}: {str(e)}")
 
-# 4. Convert the updated data back into formatted JSON and replace it inside api/gallery.js
-updated_json_str = json.dumps(gallery_data, indent=4)
-updated_js_content = re.sub(
-    r'const\s+galleryData\s*=\s*\{.*?\};', 
-    f'const galleryData = {updated_json_str};', 
-    js_content, 
-    flags=re.DOTALL
-)
-
-with open(JS_FILE_PATH, 'w', encoding='utf-8') as f:
-    f.write(updated_js_content)
-
-print("\n🎉 api/gallery.js has been beautifully updated with computer vision one-liners!")
+print(f"\n🎉 Description dataset built successfully and stored at {OUTPUT_JSON}!")
