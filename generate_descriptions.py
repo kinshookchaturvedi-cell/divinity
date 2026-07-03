@@ -1,56 +1,57 @@
 import os
 import json
+import time
 from google import genai
 from google.genai import types
 
-# 1. Initialize the official Google GenAI Client
+# 1. Dynamically find the absolute path of this script's folder
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGES_DIR = os.path.join(SCRIPT_DIR, 'images')
+OUTPUT_JSON = os.path.join(SCRIPT_DIR, 'api', 'descriptions.json')
+
+# Initialize the official Google GenAI Client
 client = genai.Client()
 
-IMAGES_DIR = 'images'
-OUTPUT_JSON = os.path.join('api', 'descriptions.json')
-
 if not os.path.exists(IMAGES_DIR):
-    print(f"❌ Error: Could not find '{IMAGES_DIR}' directory. Ensure you run this from the project root.")
+    print(f"❌ Error: Cannot find images directory at absolute path: {IMAGES_DIR}")
     exit(1)
 
-os.makedirs('api', exist_ok=True)
+# Ensure the api/ directory exists absolutely
+os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
 
-# Load existing descriptions if file exists, to avoid re-running things we already paid API credits for
+# 2. Read existing database records to avoid duplicate API usage bills
 descriptions_registry = {}
 if os.path.exists(OUTPUT_JSON):
     with open(OUTPUT_JSON, 'r', encoding='utf-8') as f:
         try:
             descriptions_registry = json.load(f)
-        except json.JSONDecodeError:
+            print(f"Loaded {len(descriptions_registry)} existing image entries from database.")
+        except Exception:
             pass
 
-print("✨ Running Computer Vision Analysis on local image folders...")
+print("✨ Running Computer Vision Analysis on local image assets...")
 
-# 2. Iterate through folders and files locally
-for folder in os.listdir(IMAGES_DIR):
+# 3. Gather exactly the folders present in your directory structure
+folders = [f for f in os.listdir(IMAGES_DIR) if os.path.isdir(os.path.join(IMAGES_DIR, f))]
+
+for folder in folders:
     folder_path = os.path.join(IMAGES_DIR, folder)
-    if not os.path.isdir(folder_path):
-        continue
-        
-    # Format a display title similar to how your JS file does it
+    
     display_title = folder.replace('_', ' ').title()
     if "Sri Ganesha" in display_title: display_title = "Ganesha"
     if "Radhe Krishna" in display_title: display_title = "Radhe"
     
-    for filename in os.listdir(folder_path):
-        if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
-            continue
-            
-        # Create a unique key using the folder and file combination
+    files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+    
+    for filename in files:
         registry_key = f"{folder}/{filename}"
+        image_path = os.path.join(folder_path, filename)
         
-        # Skip if we already have it generated
+        # Skip if we already have this image analyzed successfully
         if registry_key in descriptions_registry and descriptions_registry[registry_key]:
-            print(f"⏭️ Skipping (already indexed): {registry_key}")
             continue
             
-        image_path = os.path.join(folder_path, filename)
-        print(f"📸 Analyzing image contents via Gemini Vision: {registry_key}...")
+        print(f"📸 Gemini Vision analyzing: {registry_key}...")
         
         try:
             with open(image_path, 'rb') as img_file:
@@ -64,14 +65,27 @@ for folder in os.listdir(IMAGES_DIR):
                 ]
             )
             
-            descriptions_registry[registry_key] = response.text.strip()
-            print(f"✅ Success: \"{descriptions_registry[registry_key]}\"")
+            ai_text = response.text.strip()
+            descriptions_registry[registry_key] = ai_text
+            print(f"  ✅ Success -> \"{ai_text}\"")
             
-            # Save incrementally after each successful run
+            # Save progress immediately
             with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
-                json.dump(descriptions_registry, f, indent=4, ensure_with_ascii=False)
+                json.dump(descriptions_registry, f, indent=4, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+                
+            # ⏳ CRITICAL RATE LIMIT PACING: 
+            # 4 seconds between images = ~15 requests per minute (safely under the 20 RPM limit)
+            print("  ⏳ Pacing request rhythm... (sleeping 4s)")
+            time.sleep(4)
                 
         except Exception as e:
-            print(f"❌ Failed to analyze {filename}: {str(e)}")
+            print(f"  ❌ API failure or write block for {filename}: {str(e)}")
+            # If we still hit a rate limit, pause a bit longer to recover
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                print("  🛑 Rate limit hit. Pausing for 15 seconds to let the quota refresh...")
+                time.sleep(15)
 
-print(f"\n🎉 Description dataset built successfully and stored at {OUTPUT_JSON}!")
+print(f"\n🎉 Process Finished! Verified target file location: {OUTPUT_JSON}")
+print(f"Total structured descriptions successfully embedded: {len(descriptions_registry)}")
