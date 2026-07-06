@@ -4,10 +4,12 @@ import time
 import io
 import base64
 import requests
+import re
 from PIL import Image
 
 # --- SAFETY SETTING ---
-SANDBOX_MODE = True  # Set to False when you are ready to generate all 25 images per deity!
+# Set to True to test a single image. Set to False to generate the entire gallery!
+SANDBOX_MODE = True  
 
 # 1. Paths and Config Setup
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +21,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 # Official OpenRouter Dedicated Image Generation Route
 API_URL = "https://openrouter.ai/api/v1/images/generations"
+# The exact valid model string to bypass 402 errors and invalid ID crashes
 MODEL_NAME = "black-forest-labs/flux.2-klein-4b:free" 
 
 if not OPENROUTER_API_KEY:
@@ -59,6 +62,7 @@ for folder_name, prompts in deity_prompt_map.items():
         relative_registry_key = f"{folder_name}/{filename}"
         target_image_path = os.path.join(folder_path, filename)
         
+        # Skip if image already exists to allow resuming safely
         if os.path.exists(target_image_path) and relative_registry_key in descriptions_data:
             continue
             
@@ -97,7 +101,7 @@ for folder_name, prompts in deity_prompt_map.items():
                 img_data = base64.b64decode(raw_content.strip())
             elif 'url' in image_data_block:
                 img_url = image_data_block['url']
-                print(f"  🔗 Pulling remote image asset from provider CDN: {img_url}")
+                print(f"  🔗 Pulling remote image asset from provider CDN...")
                 img_data = requests.get(img_url, timeout=30).content
                 
             if not img_data:
@@ -138,6 +142,7 @@ for folder_name, prompts in deity_prompt_map.items():
                 print("\n🛑 Sandbox test run successful! Turning off script execution safely.")
                 exit(0)
                 
+            # Rate limiting breather between requests
             time.sleep(1.5)
             
         except Exception as e:
