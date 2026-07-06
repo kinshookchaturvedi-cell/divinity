@@ -17,7 +17,9 @@ DESCRIPTIONS_FILE = os.path.join(SCRIPT_DIR, "api", "descriptions.json")
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL_NAME = "black-forest-labs/FLUX.1-schnell" 
+
+# Target Google's Gemini Image Model on OpenRouter (Nano Banana)
+MODEL_NAME = "google/gemini-2.5-flash-image" 
 
 if not OPENROUTER_API_KEY:
     print("❌ Error: OPENROUTER_API_KEY environment variable is missing!")
@@ -45,7 +47,7 @@ headers = {
     "X-Title": "Divine Canvas Master Pipeline"
 }
 
-print(f"🚀 Initializing asset synthesis pipeline. Sandbox Mode: {SANDBOX_MODE}")
+print(f"🚀 Initializing asset synthesis pipeline via Gemini Nano Banana. Sandbox Mode: {SANDBOX_MODE}")
 
 # 2. Processing Core Loop
 for folder_name, prompts in deity_prompt_map.items():
@@ -62,6 +64,7 @@ for folder_name, prompts in deity_prompt_map.items():
             
         print(f"🎨 Synthesizing item {idx}/{len(prompts)} for deity category: {folder_name}...")
         
+        # Standard chat completions layout configuration optimized for Gemini Nano Banana
         payload = {
             "model": MODEL_NAME,
             "messages": [
@@ -75,9 +78,11 @@ for folder_name, prompts in deity_prompt_map.items():
                     ]
                 }
             ],
-            "width": 1024,
-            "height": 1024,
-            "steps": 4
+            "max_tokens": 10,  # Forces OpenRouter to drop its large wallet reservation requirement
+            "extra_body": {
+                "aspect_ratio": "1:1",
+                "response_format": "b64_json"
+            }
         }
         
         try:
