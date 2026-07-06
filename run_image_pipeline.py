@@ -4,7 +4,6 @@ import time
 import io
 import base64
 import requests
-import re
 from PIL import Image
 
 # --- SAFETY SETTING ---
@@ -17,10 +16,10 @@ IMAGES_DIR = os.path.join(SCRIPT_DIR, "images")
 DESCRIPTIONS_FILE = os.path.join(SCRIPT_DIR, "api", "descriptions.json")
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Target Google's Gemini Image Model on OpenRouter (Nano Banana)
-MODEL_NAME = "google/gemini-2.5-flash-image" 
+# Official OpenRouter Dedicated Image Generation Route
+API_URL = "https://openrouter.ai/api/v1/images/generations"
+MODEL_NAME = "black-forest-labs/flux.2-klein-4b:free" 
 
 if not OPENROUTER_API_KEY:
     print("❌ Error: OPENROUTER_API_KEY environment variable is missing!")
@@ -48,7 +47,7 @@ headers = {
     "X-Title": "Divine Canvas Master Pipeline"
 }
 
-print(f"🚀 Initializing asset synthesis pipeline via Gemini Nano Banana. Sandbox Mode: {SANDBOX_MODE}")
+print(f"🚀 Initializing asset synthesis pipeline via Flux 2 Klein. Sandbox Mode: {SANDBOX_MODE}")
 
 # 2. Processing Core Loop
 for folder_name, prompts in deity_prompt_map.items():
@@ -65,25 +64,12 @@ for folder_name, prompts in deity_prompt_map.items():
             
         print(f"🎨 Synthesizing item {idx}/{len(prompts)} for deity category: {folder_name}...")
         
-        # Payload architecture optimized for OpenRouter token validation bounds
+        # Standard payload configuration parameters for OpenRouter Dedicated Images API
         payload = {
             "model": MODEL_NAME,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt_text
-                        }
-                    ]
-                }
-            ],
-            "max_tokens": 10,  # Caps reservation calculations underneath wallet boundaries
-            "extra_body": {
-                "aspect_ratio": "1:1",
-                "response_format": "b64_json"
-            }
+            "prompt": prompt_text,
+            "aspect_ratio": "1:1",
+            "output_format": "jpeg"
         }
         
         try:
@@ -94,31 +80,29 @@ for folder_name, prompts in deity_prompt_map.items():
                 continue
                 
             response_json = response.json()
-            raw_content = response_json['choices'][0]['message']['content']
-                
-            if not raw_content:
-                print("  ❌ Error: Received empty content block from OpenRouter response payload.")
-                continue
-
-            img_data = None
-
-            # Case A: Model returns hosted asset URL or Markdown image format string
-            if "http" in raw_content:
-                url_match = re.search(r'https?://[^\s\)]+', raw_content)
-                if url_match:
-                    img_url = url_match.group(0)
-                    print(f"  🔗 Pulling remote image asset from provider CDN: {img_url}")
-                    img_data = requests.get(img_url, timeout=30).content
             
-            # Case B: Model streams inline base64 code fallback sequence
-            if not img_data:
+            # OpenRouter dedicated image API returns structural mappings in an array under 'data'
+            if 'data' not in response_json or not response_json['data']:
+                print(f"  ❌ Malformed response payload received: {response_json}")
+                continue
+                
+            image_data_block = response_json['data'][0]
+            img_data = None
+            
+            # Gracefully handle inline base64 string or target response URL
+            if 'b64_json' in image_data_block:
+                raw_content = image_data_block['b64_json']
                 if "base64," in raw_content:
                     raw_content = raw_content.split("base64,")[1]
-                try:
-                    img_data = base64.b64decode(raw_content.strip())
-                except Exception as b64_err:
-                    print(f"  ❌ Failed base64 parsing sequence pattern: {b64_err}")
-                    continue
+                img_data = base64.b64decode(raw_content.strip())
+            elif 'url' in image_data_block:
+                img_url = image_data_block['url']
+                print(f"  🔗 Pulling remote image asset from provider CDN: {img_url}")
+                img_data = requests.get(img_url, timeout=30).content
+                
+            if not img_data:
+                print("  ❌ Error: Image parsing block failed to resolve data assets.")
+                continue
 
             # 3. Post-Processing: Convert and Compress to .jpeg
             img = Image.open(io.BytesIO(img_data))
