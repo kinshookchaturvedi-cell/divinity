@@ -180,10 +180,8 @@
         // 2. Dynamically build category tabs from API data keys
         function renderNavigation(galleryRegistry) {
             navTabs.innerHTML = '<button class="tab-btn active" onclick="filterGallery(\'ALL\')">All</button>';
-            
             Object.keys(galleryRegistry).forEach(categoryKey => {
-                if (categoryKey === 'ALL') return; 
-                
+                if (categoryKey === 'ALL') return;
                 const deity = galleryRegistry[categoryKey];
                 const buttonHTML = `<button class="tab-btn" onclick="filterGallery('${categoryKey}')">${deity.title}</button>`;
                 navTabs.insertAdjacentHTML('beforeend', buttonHTML);
@@ -193,17 +191,18 @@
         // 3. Render out asset nodes dynamically mapped by object structures
         function renderGallery(galleryRegistry) {
             grid.innerHTML = ""; // Flush loaders
-            
             Object.keys(galleryRegistry).forEach(categoryKey => {
-                if (categoryKey === 'ALL') return; 
-                
+                if (categoryKey === 'ALL') return;
                 const deity = galleryRegistry[categoryKey];
                 deity.images.forEach(imgObj => {
+                    const imageSrc = `images/${deity.folder}/${imgObj.filename}`;
                     const itemHTML = `
                         <div class="gallery-item" data-category="${categoryKey}">
-                            <div class="image-wrapper">
-                                <img src="images/${deity.folder}/${imgObj.filename}" alt="${deity.title}" loading="lazy">
-                            </div>
+                            <a href="${imageSrc}" download="${imgObj.filename}" style="display: block; cursor: pointer;">
+                                <div class="image-wrapper">
+                                    <img src="${imageSrc}" alt="${deity.title}" loading="lazy">
+                                </div>
+                            </a>
                             <div class="item-details">
                                 <h2>${deity.title}</h2>
                                 <p style="color: #888; font-size: 13px; margin: 5px 0 0 0; line-height: 1.4;">
