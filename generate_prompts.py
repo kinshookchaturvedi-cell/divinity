@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "YOUR_OPENROUTER_API_KEY_HERE")
@@ -15,13 +16,39 @@ def get_deities_from_folders():
     if not os.path.exists(IMAGES_DIR):
         print(f"❌ Error: Cannot find images directory at absolute path: {IMAGES_DIR}")
         return []
-        
-    # Gather only directory names, ignoring hidden system files like .DS_Store
     folders = [f for f in os.listdir(IMAGES_DIR) if os.path.isdir(os.path.join(IMAGES_DIR, f))]
     return folders
 
+def clean_and_parse_json(raw_text):
+    """Cleans up common LLM JSON formatting errors and strips trailing commas."""
+    text = raw_text.strip()
+    
+    # 1. Strip markdown block wraps if present
+    if text.startswith("```json"):
+        text = text.split("```json")[1].split("```")[0].strip()
+    elif text.startswith("```"):
+        text = text.split("```")[1].split("```")[0].strip()
+        
+    # 2. Regex to remove trailing commas before closing brackets/braces (The culprit!)
+    text = re.sub(r',\s*([\]}])', r'\1', text)
+    
+    # 3. Attempt native loading
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # 4. Emergency fallback: try extracting just everything between the first [ and last ]
+        try:
+            start = text.find('[')
+            end = text.rfind(']') + 1
+            if start != -1 and end != 0:
+                fixed_text = text[start:end]
+                fixed_text = re.sub(r',\s*([\]}])', r'\1', fixed_text)
+                return json.loads(fixed_text)
+        except Exception:
+            pass
+        raise
+
 def fetch_prompts_for_deity(folder_name):
-    # Clean up directory names for the AI director's contextual understanding
     display_title = folder_name.replace('_', ' ').title()
     if "Sai Baba" in display_title:
         display_title = "Sai Baba"
@@ -36,29 +63,23 @@ def fetch_prompts_for_deity(folder_name):
     
     prompt_instruction = (
         f"Act as an art director. Generate exactly 25 highly diverse, single-sentence image generation prompts for artwork depicting {display_title}. "
-        "Each prompt must specify a different religious context, setting (e.g., ancient temples, cosmic spaces, serene nature), lighting condition, and artistic style (e.g., oil painting, digital art, traditional fresco). "
-        "Return ONLY a valid JSON array of strings. Do not include markdown blocks, introductory text, or numbers."
+        "Each prompt string must specify a unique religious context, setting, and artistic style. "
+        "Return ONLY a clean, valid JSON array of strings. Ensure there are no trailing commas at the end of the array items. "
+        "Example format: [\"Prompt 1\", \"Prompt 2\"]"
     )
     
     payload = {
         "model": "meta-llama/llama-3-8b-instruct",
         "messages": [{"role": "user", "content": prompt_instruction}],
-        "temperature": 0.7
+        "temperature": 0.5 # Lowered temperature slightly to keep syntax strict
     }
     
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
-        text = response.json()['choices'][0]['message']['content'].strip()
-        
-        # Strip away unexpected markdown wrapper leaks from the response data
-        if text.startswith("```json"):
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif text.startswith("```"):
-            text = text.split("```")[1].split("```")[0].strip()
-            
-        return json.loads(text)
+        raw_content = response.json()['choices'][0]['message']['content']
+        return clean_and_parse_json(raw_content)
     except Exception as e:
-        print(f"❌ Failed to generate prompts for {display_title}: {e}")
+        print(f"❌ Failed to parse or generate prompts for {display_title}: {e}")
         return []
 
 if __name__ == "__main__":
@@ -68,13 +89,15 @@ if __name__ == "__main__":
         print("❌ No target deity folders found. Aborting execution.")
         exit(1)
         
-    print(f"Found {len(deities)} deity folders to process: {deities}\n")
+    print(f"Found {len(deities)} deity folders to process.\n")
     
     all_prompts = {}
     for folder in deities:
         prompts = fetch_prompts_for_deity(folder)
         if prompts:
-            all_prompts[folder] = prompts
+            # Enforce exact cap of 25 if the LLM overproduced items
+            all_prompts[folder] = prompts[:25]
+            print(f"  ✅ Successfully loaded {len(all_prompts[folder])} prompts.")
             
     with open(OUTPUT_PROMPTS_FILE, "w", encoding="utf-8") as f:
         json.dump(all_prompts, f, indent=4, ensure_ascii=False)
