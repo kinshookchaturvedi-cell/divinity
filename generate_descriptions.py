@@ -91,7 +91,7 @@ for folder in folders:
             
             # 🛑 Emergency backup: if a rate limit is still triggered, sit tight
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                print(f"  ⏳ Quota window full. Pausing for 35 seconds to let the rate limit clear...")
+                print(f"  ⏳ Quota window full. Pausing for 60 seconds to let the rate limit clear...")
                 time.sleep(60)
 
 print(f"\n🎉 Process Finished! Verified target file location: {OUTPUT_JSON}")
