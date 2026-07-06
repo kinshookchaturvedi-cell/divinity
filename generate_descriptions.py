@@ -83,16 +83,16 @@ for folder in folders:
                 f.flush()
                 os.fsync(f.fileno())
                 
-            # ⏳ Optimized Pacing (Faster execution, but safely within standard API limits)
-            time.sleep(1.5)
+            # ⏳ Safe, steady pacing to protect your free-tier vision quota
+            time.sleep(4.0)
             
         except Exception as e:
             print(f"  ❌ API failure or write block for {filename}: {str(e)}")
             
-            # If a rate limit is hit, wait briefly to recover
+            # 🛑 Emergency backup: if a rate limit is still triggered, sit tight
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                print(f"  🛑 Rate limit reached. Sleeping 10 seconds to refresh quota...")
-                time.sleep(10)
+                print(f"  ⏳ Quota window full. Pausing for 35 seconds to let the rate limit clear...")
+                time.sleep(60)
 
 print(f"\n🎉 Process Finished! Verified target file location: {OUTPUT_JSON}")
 print(f"Total structured descriptions successfully embedded: {len(descriptions_registry)}")
