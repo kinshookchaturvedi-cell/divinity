@@ -4,6 +4,7 @@ import time
 import io
 import base64
 import requests
+import re
 from PIL import Image
 
 # --- SAFETY SETTING ---
@@ -64,7 +65,7 @@ for folder_name, prompts in deity_prompt_map.items():
             
         print(f"🎨 Synthesizing item {idx}/{len(prompts)} for deity category: {folder_name}...")
         
-        # Standard chat completions layout configuration optimized for Gemini Nano Banana
+        # Payload architecture optimized for OpenRouter token validation bounds
         payload = {
             "model": MODEL_NAME,
             "messages": [
@@ -78,7 +79,7 @@ for folder_name, prompts in deity_prompt_map.items():
                     ]
                 }
             ],
-            "max_tokens": 10,  # Forces OpenRouter to drop its large wallet reservation requirement
+            "max_tokens": 10,  # Caps reservation calculations underneath wallet boundaries
             "extra_body": {
                 "aspect_ratio": "1:1",
                 "response_format": "b64_json"
@@ -95,11 +96,30 @@ for folder_name, prompts in deity_prompt_map.items():
             response_json = response.json()
             raw_content = response_json['choices'][0]['message']['content']
                 
-            if "base64," in raw_content:
-                raw_content = raw_content.split("base64,")[1]
-                
-            img_data = base64.b64decode(raw_content.strip())
+            if not raw_content:
+                print("  ❌ Error: Received empty content block from OpenRouter response payload.")
+                continue
+
+            img_data = None
+
+            # Case A: Model returns hosted asset URL or Markdown image format string
+            if "http" in raw_content:
+                url_match = re.search(r'https?://[^\s\)]+', raw_content)
+                if url_match:
+                    img_url = url_match.group(0)
+                    print(f"  🔗 Pulling remote image asset from provider CDN: {img_url}")
+                    img_data = requests.get(img_url, timeout=30).content
             
+            # Case B: Model streams inline base64 code fallback sequence
+            if not img_data:
+                if "base64," in raw_content:
+                    raw_content = raw_content.split("base64,")[1]
+                try:
+                    img_data = base64.b64decode(raw_content.strip())
+                except Exception as b64_err:
+                    print(f"  ❌ Failed base64 parsing sequence pattern: {b64_err}")
+                    continue
+
             # 3. Post-Processing: Convert and Compress to .jpeg
             img = Image.open(io.BytesIO(img_data))
             if img.mode in ("RGBA", "P"):
