@@ -29,7 +29,7 @@ if os.path.exists(OUTPUT_JSON):
         except Exception:
             pass
 
-print("✨ Running Computer Vision Analysis on local image assets...")
+print("✨ Running Optimized Computer Vision Analysis on local image assets...")
 
 # 3. Gather exactly the folders present in your directory structure
 folders = [f for f in os.listdir(IMAGES_DIR) if os.path.isdir(os.path.join(IMAGES_DIR, f))]
@@ -37,10 +37,13 @@ folders = [f for f in os.listdir(IMAGES_DIR) if os.path.isdir(os.path.join(IMAGE
 for folder in folders:
     folder_path = os.path.join(IMAGES_DIR, folder)
     
+    # Format the display title clean
     display_title = folder.replace('_', ' ').title()
-    if "Sri Ganesha" in display_title: display_title = "Ganesha"
-    if "Radhe Krishna" in display_title: display_title = "Radhe"
-    
+    if "Sri Ganesha" in display_title:
+        display_title = "Ganesha"
+    if "Radhe Krishna" in display_title:
+        display_title = "Radhe"
+        
     files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
     
     for filename in files:
@@ -57,12 +60,17 @@ for folder in folders:
             with open(image_path, 'rb') as img_file:
                 image_bytes = img_file.read()
                 
+            # Request description with highly optimized configuration rules
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-2.5-flash-lite', # 💡 Use lite model for heavy bulk processing
                 contents=[
                     types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg'),
-                    f"Provide a short, elegant, one-sentence spiritual and poetic description for this artwork of {display_title}. Do not use quotes or introductory filler text."
-                ]
+                    f"Provide a short, elegant, one-sentence spiritual description for this artwork of {display_title}. No quotes."
+                ],
+                config=types.GenerateContentConfig(
+                    max_output_tokens=30,  # 💡 Caps response size to save output token cost
+                    temperature=0.4        # Keeps the responses concise and focused
+                )
             )
             
             ai_text = response.text.strip()
@@ -75,17 +83,16 @@ for folder in folders:
                 f.flush()
                 os.fsync(f.fileno())
                 
-            # ⏳ CRITICAL RATE LIMIT PACING: 
-            # 4 seconds between images = ~15 requests per minute (safely under the 20 RPM limit)
-            print("  ⏳ Pacing request rhythm... (sleeping 4s)")
-            time.sleep(4)
-                
+            # ⏳ Optimized Pacing (Faster execution, but safely within standard API limits)
+            time.sleep(1.5)
+            
         except Exception as e:
             print(f"  ❌ API failure or write block for {filename}: {str(e)}")
-            # If we still hit a rate limit, pause a bit longer to recover
+            
+            # If a rate limit is hit, wait briefly to recover
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                print("  🛑 Rate limit hit. Pausing for 15 seconds to let the quota refresh...")
-                time.sleep(15)
+                print(f"  🛑 Rate limit reached. Sleeping 10 seconds to refresh quota...")
+                time.sleep(10)
 
 print(f"\n🎉 Process Finished! Verified target file location: {OUTPUT_JSON}")
 print(f"Total structured descriptions successfully embedded: {len(descriptions_registry)}")
