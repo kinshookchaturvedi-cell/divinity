@@ -1,0 +1,18 @@
+# --- Automation & Image Processing ---
+# Pillow is required for image manipulation in your pipeline scripts
+Pillow==11.0.0
+
+# Requests is the standard for your API calls (e.g., OpenRouter, OpenAI)
+requests==2.32.3
+
+# --- Environment & Configuration ---
+# python-dotenv for managing API keys securely
+python-dotenv==1.0.1
+
+# --- Utilities ---
+# tqdm provides progress bars for long-running image processing tasks
+tqdm==4.66.5
+
+# --- Testing ---
+# pytest as you requested for your test suite
+pytest==8.3.3
