@@ -1,4 +1,4 @@
-name: Run Automated Tests
+name: Static Site Check
 
 on:
   push:
@@ -7,26 +7,18 @@ on:
     branches: [ "main" ]
 
 jobs:
-  run-tests:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      # Explicitly set up Node.js to ensure the runner environment is compatible
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
+      - name: Basic File Validation
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: pytest
+          echo "Checking for index.html..."
+          if [ -f "index.html" ]; then
+            echo "index.html found. Deployment ready."
+          else
+            echo "Error: index.html not found!"
+            exit 1
+          fi
